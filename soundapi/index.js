@@ -1604,7 +1604,6 @@
                         u.radio2D && u.radio2D.volume(e);
                     }),
                     (window.playSound = (e) => {
-                        console.log("playSound");
                         const o = (e = JSON.parse(e)).id;
                         u.soundPool[o] && (u.soundPool[o].stop(), delete u.soundPool[o]);
                         const t = new (n().Howl)({
