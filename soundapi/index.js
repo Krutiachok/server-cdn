@@ -1604,19 +1604,12 @@
                         u.radio2D && u.radio2D.volume(e);
                     }),
                     (window.playSound = (e) => {
+                        console.log("playSound");
                         const o = (e = JSON.parse(e)).id;
                         u.soundPool[o] && (u.soundPool[o].stop(), delete u.soundPool[o]);
-
-                        // --- ДОБАВЛЯЕМ ОТЛАДКУ ТУТ ---
-                        const finalSrc = a[e.sound] ? i + a[e.sound] : i + e.sound;
-                        if (typeof mp !== "undefined") {
-                            mp.trigger("sound_debug_chat", "DEBUG: Попытка загрузки: " + finalSrc);
-                        }
-                        // ----------------------------
-
                         const t = new (n().Howl)({
                             volume: null != e.volume ? parseFloat(e.volume) : 0.25,
-                            src: [finalSrc], // используем нашу переменную с путем
+                            src: a[e.sound] ? [i + a[e.sound]] : [i + e.sound],
                             loop: e.loop,
                             html5: !0,
                             onend: () => {
