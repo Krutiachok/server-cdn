@@ -1603,23 +1603,71 @@
                     (window.volume2DRadio = (e) => {
                         u.radio2D && u.radio2D.volume(e);
                     }),
-                    (window.playSound = (e) => {
-                        const o = (e = JSON.parse(e)).id;
-                        u.soundPool[o] && (u.soundPool[o].stop(), delete u.soundPool[o]);
-                        const t = new (n().Howl)({
-                            volume: null != e.volume ? parseFloat(e.volume) : 0.25,
-                            src: a[e.sound] ? [i + a[e.sound]] : [i + e.sound],
-                            loop: e.loop,
-                            html5: !0,
-                            onend: () => {
-                                e.loop || (delete u.soundPool[o], r("sounds.trigger", "onEnd", o));
-                            },
-                            onload() {
-                                if (!u.soundPool[o]) return delete u.soundPool[o];
-                                t.play();
-                            },
-                        });
-                        u.soundPool[o] = t;
+                    (window.playSound = function (data) {
+                        try {
+                            // 1. Безопасно парсим входящие данные
+                            let e = typeof data === "string" ? JSON.parse(data) : data;
+                            const id = e.id || Date.now().toString();
+
+                            // 2. Если этот звук уже играет, останавливаем и удаляем старый
+                            if (u.soundPool[id]) {
+                                u.soundPool[id].stop();
+                                u.soundPool[id].unload();
+                                delete u.soundPool[id];
+                            }
+
+                            // 3. Формируем финальную ссылку (i — это твоя база https://...)
+                            // Проверяем, есть ли сокращение в массиве 'a', если нет - берем прямой путь
+                            let soundPath = a[e.sound] ? a[e.sound] : e.sound;
+
+                            // Убеждаемся, что между базой и путем есть только один слеш
+                            let finalSrc = (i.endsWith("/") ? i : i + "/") + (soundPath.startsWith("/") ? soundPath.slice(1) : soundPath);
+
+                            // 4. ОТЛАДКА: Отправляем итоговый путь в чат игры (T-чат)
+                            if (typeof mp !== "undefined") {
+                                mp.trigger("sound_debug_chat", "Играю: " + finalSrc);
+                            }
+
+                            // 5. Создаем Howl с правильными параметрами
+                            const t = new Howl({
+                                src: [finalSrc],
+                                volume: e.volume !== undefined ? parseFloat(e.volume) : 0.25,
+                                loop: !!e.loop,
+                                html5: true, // Важно для потокового аудио и внешних ссылок
+                                format: ["mp3", "ogg", "wav"], // Явно указываем форматы
+
+                                onload: function () {
+                                    // Запускаем только если объект еще нужен
+                                    if (u.soundPool[id]) {
+                                        t.play();
+                                    }
+                                },
+
+                                onloaderror: function (id_err, err) {
+                                    if (typeof mp !== "undefined") {
+                                        mp.trigger("sound_debug_chat", "ОШИБКА ЗАГРУЗКИ: " + err + " | Путь: " + finalSrc);
+                                    }
+                                    delete u.soundPool[id];
+                                },
+
+                                onend: function () {
+                                    if (!e.loop) {
+                                        delete u.soundPool[id];
+                                        // Отправляем триггер в клиент игры об окончании
+                                        if (typeof mp !== "undefined") {
+                                            mp.trigger("sounds.trigger", "onEnd", id);
+                                        }
+                                    }
+                                },
+                            });
+
+                            // Сохраняем в пул
+                            u.soundPool[id] = t;
+                        } catch (err) {
+                            if (typeof mp !== "undefined") {
+                                mp.trigger("sound_debug_chat", "CRITICAL JS ERROR: " + err.message);
+                            }
+                        }
                     }),
                     (window.play3DSound = (e) => {
                         const o = (e = JSON.parse(e)).id;
