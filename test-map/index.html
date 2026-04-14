@@ -288,21 +288,26 @@ function renderZones(zones) {
         zoneGroup.appendChild(title);
 
         zone.Bounds.forEach(bound => {
-            const rect = document.createElementNS(svgNS, "rect");
+    const rect = document.createElementNS(svgNS, "rect");
 
-            // Координаты (адаптировано под вашу карту)
-            const x = offsetX + (bound.Minimum.X / worldToPixelConst);
-            const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
-            const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
-            const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
+    // X остается прежним
+    const x = offsetX + (bound.Minimum.X / worldToPixelConst);
+    
+    // ВАЖНО: Для Y в SVG мы берем MAXIMUM.Y из игры, 
+    // так как это самая "северная" (верхняя) точка прямоугольника.
+    const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
 
-            rect.setAttribute("x", x);
-            rect.setAttribute("y", y);
-            rect.setAttribute("width", width);
-            rect.setAttribute("height", height);
-            
-            zoneGroup.appendChild(rect);
-        });
+    // Ширина и высота должны быть всегда положительными
+    const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
+    const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
+
+    rect.setAttribute("x", x);
+    rect.setAttribute("y", y);
+    rect.setAttribute("width", width);
+    rect.setAttribute("height", height);
+    
+    zoneGroup.appendChild(rect);
+});
 
         layer.appendChild(zoneGroup);
     });
