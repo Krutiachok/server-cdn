@@ -279,7 +279,7 @@ function renderZones(zones) {
         const zoneName = zone.Name.toLocaleLowerCase();
         if(zoneName == "oceana") continue;
         // 1. Ищем или создаем группу для этой зоны
-        let zoneGroup = layer.querySelector(`g[data-name="${zoneName}"]`);
+       let zoneGroup = layer.querySelector(`g[data-name="${zoneName}"]`);
 
         if (!zoneGroup) {
             zoneGroup = document.createElementNS(svgNS, "g");
@@ -290,35 +290,36 @@ function renderZones(zones) {
             title.textContent = zone.DisplayName || zoneName;
             zoneGroup.appendChild(title);
             
+            // Создаем ОДИН путь для всех прямоугольников этой зоны
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("class", "zone-path");
+            path.setAttribute("d", ""); // Пока пустой
+            zoneGroup.appendChild(path);
+
             layer.appendChild(zoneGroup);
         }
 
-        // 2. Отрисовка прямоугольников с проверкой на дубликаты
+        const pathElement = zoneGroup.querySelector('.zone-path');
+        let d = pathElement.getAttribute("d");
+
+        // 2. Генерируем данные для пути
         zone.Bounds.forEach(bound => {
             const x = offsetX + (bound.Minimum.X / worldToPixelConst);
             const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
             const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
             const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
 
-            // Создаем уникальный ID для координат (строка вида "x-y-w-h")
-            const rectId = `rect-${x}-${y}-${width}-${height}`.replace(/\./g, '_');
+            // Формируем команду для одного прямоугольника
+            // M (старт) h (вправо) v (вниз) h (влево) z (закрыть)
+            const rectPath = `M${x},${y}h${width}v${height}h${-width}z`;
 
-            // ПРОВЕРКА: Если в этой группе уже есть такой прямоугольник — пропускаем
-            if (zoneGroup.querySelector(`[data-rect-id="${rectId}"]`)) {
-                return; 
+            // Проверяем, нет ли уже такого фрагмента в пути (защита от дублей)
+            if (!d.includes(rectPath)) {
+                d += " " + rectPath;
             }
-
-            const rect = document.createElementNS(svgNS, "rect");
-            rect.setAttribute("x", x);
-            rect.setAttribute("y", y);
-            rect.setAttribute("width", width);
-            rect.setAttribute("height", height);
-            
-            // Сохраняем ID координат, чтобы не рисовать такой же сверху
-            rect.setAttribute("data-rect-id", rectId);
-            
-            zoneGroup.appendChild(rect);
         });
+
+        pathElement.setAttribute("d", d.trim());
     });
 }
 
