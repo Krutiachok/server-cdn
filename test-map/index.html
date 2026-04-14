@@ -143,25 +143,21 @@
             cursor: pointer;
         }
         .zone-group {
-    fill: rgba(251, 192, 45, 0.4); /* Полупрозрачный желтый */
+    fill: rgba(251, 192, 45, 0.4); 
     stroke: #fbc02d;
     stroke-width: 2px;
-    cursor: pointer;
     vector-effect: non-scaling-stroke;
-    transition: 0.2s;
+    pointer-events: all;
+    transition: fill 0.2s;
 }
 
-/* Чтобы при наведении подсвечивалась ВСЯ зона (все её квадраты) */
 .zone-group:hover {
     fill: rgba(251, 192, 45, 0.7);
-    stroke: white;
 }
 
-/* Убираем индивидуальные границы у внутренних ректов, 
-   чтобы они сливались визуально */
+/* Убираем обводку у внутренних квадратов, чтобы они не дробили зону */
 .zone-group rect {
-    stroke: none; 
-    vector-effect: non-scaling-stroke;
+    stroke-width: 0; 
 }
     </style>
 </head>
@@ -275,19 +271,18 @@ function renderZones(zones) {
     const layer = document.getElementById('zones-layer');
     const svgNS = "http://w3.org";
     
-    // Очищаем слой перед отрисовкой
     layer.innerHTML = '';
 
     zones.forEach(zone => {
         if (!zone.Bounds || zone.Bounds.length === 0) return;
 
-        // Создаем группу для всей зоны (например, для аэропорта)
-        // Это позволит всем квадратам внутри вести себя как единое целое
+        // Создаем группу
         const zoneGroup = document.createElementNS(svgNS, "g");
+        
+        // ИСПРАВЛЕНИЕ: Используем setAttribute вместо dataset
         zoneGroup.setAttribute("class", "zone-group");
-        zoneGroup.dataset.name = zone.Name;
+        zoneGroup.setAttribute("data-name", zone.Name);
 
-        // Добавляем одну общую подсказку на всю группу
         const title = document.createElementNS(svgNS, "title");
         title.textContent = zone.DisplayName || zone.Name;
         zoneGroup.appendChild(title);
@@ -295,8 +290,7 @@ function renderZones(zones) {
         zone.Bounds.forEach(bound => {
             const rect = document.createElementNS(svgNS, "rect");
 
-            // --- АДАПТАЦИЯ ПОД ВАШУ КАРТУ ---
-            // Формула из вашего обработчика мыши: (offset + coord / worldToPixelConst)
+            // Координаты (адаптировано под вашу карту)
             const x = offsetX + (bound.Minimum.X / worldToPixelConst);
             const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
             const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
@@ -307,13 +301,13 @@ function renderZones(zones) {
             rect.setAttribute("width", width);
             rect.setAttribute("height", height);
             
-            // Добавляем прямоугольник в группу
             zoneGroup.appendChild(rect);
         });
 
         layer.appendChild(zoneGroup);
     });
 }
+
 
 fetch('./zones.json')
     .then(response => response.json())
