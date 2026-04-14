@@ -255,21 +255,21 @@
             window.setTarget(x, y, true);
         }
 
-
-        // В начале вашего основного скрипта добавьте импорт:
-
-
-// Обновите функцию отрисовки
 function renderZones(zones) {
     const layer = document.getElementById('zones-layer');
     
-    zones.forEach(zone => {
-        zone.Bounds.forEach(bound => {
-            const rect = document.createElementNS("http://w3.org", "rect");
+    // Пространство имен SVG (строго по стандарту)
+    const svgNS = "http://w3.org";
 
-            // Конвертация в пиксели вашей карты 8192x8192
+    zones.forEach(zone => {
+        if (!zone.Bounds) return;
+
+        zone.Bounds.forEach(bound => {
+
+            const rect = document.createElementNS(svgNS, "rect");
+
             const x = offsetX + (bound.Minimum.X / worldToPixelConst);
-            const y = offsetY - (bound.Maximum.Y / worldToPixelConst); // Используем MaxY для верха
+            const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
             const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
             const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
 
@@ -277,19 +277,21 @@ function renderZones(zones) {
             rect.setAttribute("y", y);
             rect.setAttribute("width", width);
             rect.setAttribute("height", height);
-            rect.setAttribute("class", "zone-rect");
             
-            // Стили
             rect.style.fill = "rgba(251, 192, 45, 0.3)";
             rect.style.stroke = "#fbc02d";
             rect.style.strokeWidth = "2px";
             rect.style.vectorEffect = "non-scaling-stroke";
+            rect.style.pointerEvents = "all";
+
+            const title = document.createElementNS(svgNS, "title");
+            title.textContent = zone.DisplayName || zone.Name;
+            rect.appendChild(title);
 
             layer.appendChild(rect);
         });
     });
 }
-
 
 
         
