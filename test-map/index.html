@@ -142,21 +142,28 @@
             cursor: pointer;
         }
         .zone-group {
-    fill: rgba(251, 192, 45, 0.4); 
+    /* Группа будет отрисована в памяти целиком, а потом наложена на карту */
+    isolation: isolate; 
+    opacity: 0.7; /* Задаем прозрачность всей группе сразу */
+}
+
+.zone-group rect {
+    fill: #fbc02d; /* Цвет без прозрачности */
+    stroke: none;
+    mix-blend-mode: plus-lighter; /* Помогает сгладить стыки */
+}
+
+.zone-path {
+    fill: rgba(251, 192, 45, 0.4); /* Теперь цвет одинаковый везде! */
     stroke: #fbc02d;
     stroke-width: 2px;
     vector-effect: non-scaling-stroke;
-    pointer-events: all;
+    cursor: pointer;
     transition: fill 0.2s;
 }
 
-.zone-group:hover {
+.zone-path:hover {
     fill: rgba(251, 192, 45, 0.7);
-}
-
-/* Убираем обводку у внутренних квадратов, чтобы они не дробили зону */
-.zone-group rect {
-    stroke-width: 0; 
 }
     </style>
 </head>
@@ -273,39 +280,34 @@ function renderZones(zones) {
     layer.innerHTML = '';
 
     zones.forEach(zone => {
-        if (!zone.Bounds || zone.Bounds.length === 0) return;
+        if (!zone.Bounds) return;
 
-        // Создаем группу
-        const zoneGroup = document.createElementNS(svgNS, "g");
+        // Создаем ПУТЬ (Path) вместо группы ректов
+        const pathElement = document.createElementNS(svgNS, "path");
+        pathElement.setAttribute("class", "zone-path");
         
-        // ИСПРАВЛЕНИЕ: Используем setAttribute вместо dataset
-        zoneGroup.setAttribute("class", "zone-group");
-        zoneGroup.setAttribute("data-name", zone.Name.toLocaleLowerCase());
-
-        const title = document.createElementNS(svgNS, "title");
-        title.textContent = zone.DisplayName || zone.Name.toLocaleLowerCase();
-        zoneGroup.appendChild(title);
+        let pathData = "";
 
         zone.Bounds.forEach(bound => {
-    const rect = document.createElementNS(svgNS, "rect");
+            const x = offsetX + (bound.Minimum.X / worldToPixelConst);
+            const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
+            const w = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
+            const h = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
 
-    const x = offsetX + (bound.Minimum.X / worldToPixelConst);
-    
-    const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
-    const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
-    const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
+            // Генерируем данные для Path (команда M - переместить, h/v - линии, z - закрыть)
+            pathData += ` M ${x},${y} h ${w} v ${h} h ${-w} z `;
+        });
 
-    rect.setAttribute("x", x);
-    rect.setAttribute("y", y);
-    rect.setAttribute("width", width);
-    rect.setAttribute("height", height);
-    
-    zoneGroup.appendChild(rect);
-});
+        pathElement.setAttribute("d", pathData);
+        
+        const title = document.createElementNS(svgNS, "title");
+        title.textContent = zone.DisplayName || zone.Name;
+        pathElement.appendChild(title);
 
-        layer.appendChild(zoneGroup);
+        layer.appendChild(pathElement);
     });
 }
+
 
 
 fetch('./zones.json')
