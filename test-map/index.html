@@ -268,8 +268,9 @@
 
 function renderZones(zones) {
     const layer = document.getElementById('zones-layer');
-    const svgNS = "http://www.w3.org/2000/svg";
+    const svgNS = "http://w3.org";
     
+    // Очищаем слой перед отрисовкой
     layer.innerHTML = '';
 
     zones.forEach(zone => {
@@ -277,10 +278,9 @@ function renderZones(zones) {
 
         const zoneName = zone.Name.toLocaleLowerCase();
         
-        // 🔍 ПРОВЕРКА: Ищем, есть ли уже группа с таким именем
+        // 1. Ищем или создаем группу для этой зоны
         let zoneGroup = layer.querySelector(`g[data-name="${zoneName}"]`);
 
-        // Если группы нет, создаем её
         if (!zoneGroup) {
             zoneGroup = document.createElementNS(svgNS, "g");
             zoneGroup.setAttribute("class", "zone-group");
@@ -293,24 +293,35 @@ function renderZones(zones) {
             layer.appendChild(zoneGroup);
         }
 
-        // Добавляем прямоугольники в найденную или новую группу
+        // 2. Отрисовка прямоугольников с проверкой на дубликаты
         zone.Bounds.forEach(bound => {
-            const rect = document.createElementNS(svgNS, "rect");
-
             const x = offsetX + (bound.Minimum.X / worldToPixelConst);
             const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
             const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
             const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
 
+            // Создаем уникальный ID для координат (строка вида "x-y-w-h")
+            const rectId = `rect-${x}-${y}-${width}-${height}`.replace(/\./g, '_');
+
+            // ПРОВЕРКА: Если в этой группе уже есть такой прямоугольник — пропускаем
+            if (zoneGroup.querySelector(`[data-rect-id="${rectId}"]`)) {
+                return; 
+            }
+
+            const rect = document.createElementNS(svgNS, "rect");
             rect.setAttribute("x", x);
             rect.setAttribute("y", y);
             rect.setAttribute("width", width);
             rect.setAttribute("height", height);
             
+            // Сохраняем ID координат, чтобы не рисовать такой же сверху
+            rect.setAttribute("data-rect-id", rectId);
+            
             zoneGroup.appendChild(rect);
         });
     });
 }
+
 
 
 
