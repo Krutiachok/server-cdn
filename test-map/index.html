@@ -277,7 +277,8 @@ function renderZones(zones) {
         if (!zone.Bounds || zone.Bounds.length === 0) return;
 
         const zoneName = zone.Name.toLocaleLowerCase();
-        //if(zoneName == "oceana") continue;
+        if(zoneName != "oceana")
+        {
         // 1. Ищем или создаем группу для этой зоны
        let zoneGroup = layer.querySelector(`g[data-name="${zoneName}"]`);
 
@@ -320,6 +321,7 @@ function renderZones(zones) {
         });
 
         pathElement.setAttribute("d", d.trim());
+    }
     });
 }
 
