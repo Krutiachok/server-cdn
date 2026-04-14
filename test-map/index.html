@@ -142,6 +142,27 @@
             vector-effect: non-scaling-stroke; /* Чтобы линии не толстели при зуме */
             cursor: pointer;
         }
+        .zone-group {
+    fill: rgba(251, 192, 45, 0.4); /* Полупрозрачный желтый */
+    stroke: #fbc02d;
+    stroke-width: 2px;
+    cursor: pointer;
+    vector-effect: non-scaling-stroke;
+    transition: 0.2s;
+}
+
+/* Чтобы при наведении подсвечивалась ВСЯ зона (все её квадраты) */
+.zone-group:hover {
+    fill: rgba(251, 192, 45, 0.7);
+    stroke: white;
+}
+
+/* Убираем индивидуальные границы у внутренних ректов, 
+   чтобы они сливались визуально */
+.zone-group rect {
+    stroke: none; 
+    vector-effect: non-scaling-stroke;
+}
     </style>
 </head>
 
@@ -252,17 +273,30 @@
 
 function renderZones(zones) {
     const layer = document.getElementById('zones-layer');
+    const svgNS = "http://w3.org";
     
-    // Пространство имен SVG (строго по стандарту)
-    const svgNS = "http://www.w3.org/2000/svg";
+    // Очищаем слой перед отрисовкой
+    layer.innerHTML = '';
 
     zones.forEach(zone => {
-        if (!zone.Bounds) return;
+        if (!zone.Bounds || zone.Bounds.length === 0) return;
+
+        // Создаем группу для всей зоны (например, для аэропорта)
+        // Это позволит всем квадратам внутри вести себя как единое целое
+        const zoneGroup = document.createElementNS(svgNS, "g");
+        zoneGroup.setAttribute("class", "zone-group");
+        zoneGroup.dataset.name = zone.Name;
+
+        // Добавляем одну общую подсказку на всю группу
+        const title = document.createElementNS(svgNS, "title");
+        title.textContent = zone.DisplayName || zone.Name;
+        zoneGroup.appendChild(title);
 
         zone.Bounds.forEach(bound => {
-
             const rect = document.createElementNS(svgNS, "rect");
 
+            // --- АДАПТАЦИЯ ПОД ВАШУ КАРТУ ---
+            // Формула из вашего обработчика мыши: (offset + coord / worldToPixelConst)
             const x = offsetX + (bound.Minimum.X / worldToPixelConst);
             const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
             const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
@@ -273,18 +307,11 @@ function renderZones(zones) {
             rect.setAttribute("width", width);
             rect.setAttribute("height", height);
             
-            rect.style.fill = "rgba(251, 192, 45, 0.3)";
-            rect.style.stroke = "#fbc02d";
-            rect.style.strokeWidth = "2px";
-            rect.style.vectorEffect = "non-scaling-stroke";
-            rect.style.pointerEvents = "all";
-
-            const title = document.createElementNS(svgNS, "title");
-            title.textContent = zone.DisplayName || zone.Name;
-            rect.appendChild(title);
-
-            layer.appendChild(rect);
+            // Добавляем прямоугольник в группу
+            zoneGroup.appendChild(rect);
         });
+
+        layer.appendChild(zoneGroup);
     });
 }
 
