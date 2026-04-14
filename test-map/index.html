@@ -178,12 +178,7 @@
     </div>
 
     <script>
-        fetch('./zones.json')
-    .then(response => response.json())
-    .then(zones => {
-        renderZones(zones);
-    })
-    .catch(err => console.error("Ошибка загрузки JSON:", err));
+        
         const baseSize = 8192, worldToPixelConst = 1.51821820693, offsetX = 3756, offsetY = 5528;
         let zoom = 0.2, currentX = 0, currentY = 0, elementSize = { width: 0, height: 0 };
 
@@ -293,7 +288,12 @@ function renderZones(zones) {
     });
 }
 
-
+fetch('./zones.json')
+    .then(response => response.json())
+    .then(zones => {
+        renderZones(zones);
+    })
+    .catch(err => console.error("Ошибка загрузки JSON:", err));
         
         window.addEventListener('resize', updateSize);
         updateSize();
