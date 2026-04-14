@@ -280,23 +280,18 @@ function renderZones(zones) {
         
         // ИСПРАВЛЕНИЕ: Используем setAttribute вместо dataset
         zoneGroup.setAttribute("class", "zone-group");
-        zoneGroup.setAttribute("data-name", zone.Name);
+        zoneGroup.setAttribute("data-name", zone.Name.toLocaleLowerCase());
 
         const title = document.createElementNS(svgNS, "title");
-        title.textContent = zone.DisplayName || zone.Name;
+        title.textContent = zone.DisplayName || zone.Name.toLocaleLowerCase();
         zoneGroup.appendChild(title);
 
         zone.Bounds.forEach(bound => {
     const rect = document.createElementNS(svgNS, "rect");
 
-    // X остается прежним
     const x = offsetX + (bound.Minimum.X / worldToPixelConst);
     
-    // ВАЖНО: Для Y в SVG мы берем MAXIMUM.Y из игры, 
-    // так как это самая "северная" (верхняя) точка прямоугольника.
     const y = offsetY - (bound.Maximum.Y / worldToPixelConst);
-
-    // Ширина и высота должны быть всегда положительными
     const width = (bound.Maximum.X - bound.Minimum.X) / worldToPixelConst;
     const height = (bound.Maximum.Y - bound.Minimum.Y) / worldToPixelConst;
 
